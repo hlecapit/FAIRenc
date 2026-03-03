@@ -186,7 +186,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0]) 
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32)
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
