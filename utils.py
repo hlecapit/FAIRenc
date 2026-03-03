@@ -228,7 +228,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0]) 
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
@@ -279,7 +279,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0])
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         
         if args.self_loop:
@@ -323,7 +323,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0])
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32)
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
@@ -501,7 +501,7 @@ def laplacian_positional_encoding(g, pos_enc_dim):
     #EigVal, EigVec = sp.linalg.eigs(L, k=pos_enc_dim+1, which='SR')
     EigVal, EigVec = sp.linalg.eigs(L, k=pos_enc_dim+1, which='SM', tol=1e-2) # for 40 PEs
     EigVec = EigVec[:, EigVal.argsort()] # increasing order
-    lap_pos_enc = torch.from_numpy(EigVec[:,1:pos_enc_dim+1]).float() # 第二小开始，从小到大
+    lap_pos_enc = torch.from_numpy(EigVec[:,1:pos_enc_dim+1]).float() 
 
     return lap_pos_enc
 
