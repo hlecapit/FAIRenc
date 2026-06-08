@@ -24,6 +24,26 @@ import pandas as pd
 #import torch_sparse
 
 
+def map_and_filter_edges(edges_unordered, idx_map, dataset_name='dataset'):
+    edges_unordered = np.atleast_2d(edges_unordered)
+    if edges_unordered.shape[1] != 2:
+        edges_unordered = edges_unordered.reshape(-1, 2)
+
+    mapped = np.array([idx_map.get(int(x)) for x in edges_unordered.flatten()], dtype=object)
+    mapped = mapped.reshape(edges_unordered.shape)
+
+    valid_mask = np.logical_and(mapped[:, 0] != None, mapped[:, 1] != None)
+    dropped_edges = int((~valid_mask).sum())
+    if dropped_edges > 0:
+        print('warning: dropped {} edges with missing nodes in {}'.format(dropped_edges, dataset_name))
+
+    edges = mapped[valid_mask].astype(int)
+    if edges.shape[0] == 0:
+        raise ValueError('No valid edges left after mapping in {}'.format(dataset_name))
+
+    return edges
+
+
 
 def load_dataset(args):
     datapath = args.datapath
@@ -50,7 +70,7 @@ def load_dataset(args):
         # idx = node_df['user_id'].values # for relations
         idx = np.array(idx_features_labels["user_id"], dtype=int)
         idx_map = {j: i for i, j in enumerate(idx)} #{0:0, 1:1, 2:2, ... , feature.shape[0]-1:feature.shape[0]-1}
-        edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape) 
+        edges = map_and_filter_edges(edges_unordered, idx_map, args.dataset)
         adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
@@ -96,7 +116,7 @@ def load_dataset(args):
         # idx = node_df['user_id'].values # for relations
         idx = np.array(idx_features_labels["user_id"], dtype=int)
         idx_map = {j: i for i, j in enumerate(idx)} #{0:0, 1:1, 2:2, ... , feature.shape[0]-1:feature.shape[0]-1}
-        edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape) 
+        edges = map_and_filter_edges(edges_unordered, idx_map, args.dataset)
         adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
         if args.self_loop:
@@ -142,7 +162,7 @@ def load_dataset(args):
         # idx = node_df['user_id'].values # for relations
         idx = np.array(idx_features_labels["user_id"], dtype=int)
         idx_map = {j: i for i, j in enumerate(idx)} #{0:0, 1:1, 2:2, ... , feature.shape[0]-1:feature.shape[0]-1}
-        edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape) 
+        edges = map_and_filter_edges(edges_unordered, idx_map, args.dataset)
         adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
@@ -186,7 +206,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0]) 
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32)
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
@@ -228,7 +248,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0]) 
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
@@ -279,7 +299,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0])
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) 
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) 
         
         if args.self_loop:
@@ -323,7 +343,7 @@ def load_dataset(args):
         idx = np.arange(feature.shape[0])
         idx_map = {j: i for i, j in enumerate(idx)}
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),dtype=int).reshape(edges_unordered.shape)
-        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32)
+        adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),shape=(labels.shape[0], labels.shape[0]),dtype=np.float32) #视sp.coo_matrix生成稀疏矩阵（与csr_matrix相反）
         adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
         if args.self_loop:
             adj = adj + sp.eye(adj.shape[0]) 
@@ -516,29 +536,70 @@ def adjacency_positional_encoding(g, pos_enc_dim):
 
 
 def scalable_fair_PE(A, pos_enc_dim, f, G):
-    identity = torch.eye(A.shape[0])
-    D = torch.diag(G.out_degrees() + G.in_degrees()) - identity
-    L = D - A.todense()
+    degree = np.asarray(A.sum(axis=1)).reshape(-1).astype(np.float64)
+    D = sp.diags(degree)
+    L = D - A.tocsr()
     with np.errstate(divide='ignore'):
-        d_inv_sqrt = 1.0 / np.sqrt(np.diag(D))
+        d_inv_sqrt = 1.0 / np.sqrt(D.diagonal())
     d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
     D_inv_sqrt_sp = sp.diags(d_inv_sqrt)
+    if isinstance(f, torch.Tensor):
+        f = f.cpu().numpy()
     C = D_inv_sqrt_sp @ f
-    CtC_inv = spl.inv(np.transpose(C) @ C)
-    def constraint(x):
-        Lb = Ln @ x
-        proj = C @ (CtC_inv @ (np.transpose(C) @ Lb))
-        return Lb - proj
+    CtC_inv = np.linalg.pinv(np.transpose(C) @ C)
 
     Ln = D_inv_sqrt_sp @ L @ D_inv_sqrt_sp
-    M = (Ln + np.transpose(Ln))/2
+    M = ((Ln + Ln.T) * 0.5).tocsr()
 
-    A_op = sp.linalg.LinearOperator((M.shape[0], M.shape[1]), matvec=constraint)
-    eignvalue, eignvector = sp.linalg.eigsh(A_op, which='SM', k=pos_enc_dim)
+    def constraint(x):
+        Lb = M @ x
+        proj = C @ (CtC_inv @ (np.transpose(C) @ Lb))
+        return np.asarray(Lb - proj).reshape(-1)
+
+    print('start eigen decomposition')
+    eigen_dim = min(pos_enc_dim, M.shape[0] - 1)
+    A_op = sp.linalg.LinearOperator((M.shape[0], M.shape[1]), matvec=constraint, rmatvec=constraint, dtype=np.float64)
+    eignvalue, eignvector = sp.linalg.eigsh(A_op, which='SM', k=eigen_dim, tol=1e-3)
+    order = np.argsort(eignvalue)
+    eignvalue = eignvalue[order]
+    eignvector = eignvector[:, order]
     eignvector = D_inv_sqrt_sp @ eignvector
     eignvalue = torch.from_numpy(eignvalue).float()
     eignvector = torch.from_numpy(eignvector).float()
     return eignvalue, eignvector
+
+
+def truncated_fair_PE(A, pos_enc_dim, f, G):
+    degree = np.asarray(A.sum(axis=1)).reshape(-1).astype(np.float64)
+    D = sp.diags(degree)
+    L = D - A.tocsr()
+    with np.errstate(divide='ignore'):
+        d_inv_sqrt = 1.0 / np.sqrt(D.diagonal())
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
+    D_inv_sqrt_sp = sp.diags(d_inv_sqrt)
+    if isinstance(f, torch.Tensor):
+        f = f.cpu().numpy()
+    C = D_inv_sqrt_sp @ f
+    CtC_inv = np.linalg.pinv(np.transpose(C) @ C)
+
+    Ln = D_inv_sqrt_sp @ L @ D_inv_sqrt_sp
+    M = ((Ln + Ln.T) * 0.5).tocsr()
+
+    def constraint(x):
+        Lb = M @ x
+        proj = C @ (CtC_inv @ (np.transpose(C) @ Lb))
+        return np.asarray(Lb - proj).reshape(-1)
+
+    eigen_dim = min(pos_enc_dim + 1, M.shape[0] - 1)
+    A_op = sp.linalg.LinearOperator((M.shape[0], M.shape[1]), matvec=constraint, rmatvec=constraint, dtype=np.float64)
+    eignvalue, eignvector = sp.linalg.eigsh(A_op, which='SM', k=eigen_dim, tol=1e-3)
+    order = np.argsort(eignvalue)
+    eignvalue = eignvalue[order]
+    eignvector = eignvector[:, order]
+    eignvector = D_inv_sqrt_sp @ eignvector
+    eignvalue = torch.from_numpy(eignvalue).float()
+    eignvector = torch.from_numpy(eignvector).float()
+    return eignvalue, eignvector[:,1:pos_enc_dim+1]
 
 #import torch_sparse
 

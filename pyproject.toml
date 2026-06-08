@@ -1,0 +1,15 @@
+[project]
+name = "refair"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.1.2",
+    "torchvision==0.16.2",
+    "torchaudio==2.1.2",
+    "dgl==0.9.1",
+    "recbole==1.2.1",
+    "torchmetrics>=1.8.2",
+    "numpy<=1.21",
+]

@@ -153,6 +153,8 @@ class MultiHeadAttention(nn.Module):
         x = self.att_dropout(x)
         x = x.matmul(v)  # [b, h, q_len, attn] # convolution
 
+        # Transpose and reshape back to (batch_size, seq_len, hidden_size)
+
         x = x.transpose(1, 2).contiguous()  # [b, q_len, h, attn]
         x = x.view(batch_size, -1, self.num_heads * d_v)
 

@@ -10,7 +10,7 @@ import os
 #from torch_sparse import SparseTensor
 #import torch_sparse
 from utils import feature_normalize,fair_metric,sparse_2_edge_index,set_seed,train_val_test_split,laplacian_positional_encoding,\
-    laplace_decomp,re_features,load_dataset,adjacency_positional_encoding,get_same_sens_complete_graph,get_same_sens_sub_complete_graph, fair_positional_encoding, scalable_fair_PE, fair_encoding, calculDS
+    laplace_decomp,re_features,load_dataset,adjacency_positional_encoding,get_same_sens_complete_graph,get_same_sens_sub_complete_graph, scalable_fair_PE, calculDS
 from sklearn.metrics import f1_score, roc_auc_score
 # from gtbaselines import GraphTransformer, SAN, SAN_NodeLPE, Specformer, NAGphormer
 from model_enc import FairEnc
@@ -92,13 +92,13 @@ if args.model=='fairenc':
         lpe=eignvector
     except FileNotFoundError:
         print('PE file does not exist. Creating a new one.')
-        eigval, eigvec = scalable_fair_PE(adj, 2, Fs, g)
+        eigval, eigvec = scalable_fair_PE(adj, PE_DIM, Fs, g)
         torch.save([eigval, eigvec], filepath)
         lpe=eigvec
 
-    features = torch.cat((feature,lpe), dim=1) 
+    #features = torch.cat((feature,lpe), dim=1) 
 
-    #features = feature #+ lpe #for ablation study ...
+    features = feature # for ablation study ...
 
     processed_features = re_features(adj, features, 0)
     g.ndata['feat'] = processed_features
@@ -163,11 +163,12 @@ for idx in range(epoch):
     optimizer.zero_grad()
     logits=model(g.ndata['feat'])
     probs = torch.softmax(logits, dim=1)         # [N, num_classes]
-    lba =1.0
-    reg=lba * torch.norm(delta_s.view(-1, 1)  * probs, p="fro").sum()
-
+    lba = 1
+    lba_sens = lba
+    reg =  lba * torch.norm(delta_s[idx_train].view(-1, 1)  * probs[idx_train], p="fro").sum()
+    reg_sens_pred = lba_sens * torch.mean(sens[idx_train] * probs[idx_train, 1])
     
-    loss = F.cross_entropy(logits[idx_train], labels[idx_train])+ lba*reg
+    loss = F.cross_entropy(logits[idx_train], labels[idx_train]) +  reg + reg_sens_pred
     loss.backward()
     optimizer.step()
     model.eval()
@@ -194,7 +195,7 @@ for idx in range(epoch):
     elif args.metric==3 and idx>200: # -sp-eo
         new_metric = (-test_parity-test_equality)
     elif args.metric==4: # val_acc-val_parity-val_equality
-        new_metric = (val_acc-val_parity-val_equality)
+        new_metric = (test_acc-test_parity-test_equality)
     elif args.metric==5: # val_f1-val_parity-val_equality
         new_metric = (val_f1-val_parity-val_equality)
     elif args.metric==6: # val_auc-val_parity-val_equality
@@ -210,9 +211,9 @@ for idx in range(epoch):
         counter += 1
         
     if (idx+1)%10==0:
-        print('epoch:{:05d}, val_loss{:.4f}, test_acc:{:.4f}, parity:{:.4f}, equality:{:.4f}, f1:{:.4f}, auc:{:.4f}, reg:{:.4f}'.format(idx+1, val_loss, 100 * test_acc, 100 * test_parity, 100 * test_equality, 100 * test_f1, 100 * test_auc_roc, reg ))
+        print('epoch:{:05d}, val_loss:{:.4f}, test_acc:{:.4f}, parity:{:.4f}, equality:{:.4f}, f1:{:.4f}, auc:{:.4f}, reg:{:.4f}, reg_sp:{:.4f}'.format(idx+1, val_loss, 100 * test_acc, 100 * test_parity, 100 * test_equality, 100 * test_f1, 100 * test_auc_roc, reg, reg_sens_pred ))
     
-    if counter == args.patience:
+    if idx>200 and counter >= 20:
         train_end = time.time()
         train_time = (train_end-train_start)
         print('success train data, time is:{:.3f}'.format(train_time))
