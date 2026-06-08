@@ -163,7 +163,7 @@ for idx in range(epoch):
     optimizer.zero_grad()
     logits=model(g.ndata['feat'])
     probs = torch.softmax(logits, dim=1)         # [N, num_classes]
-    lba = 1
+    lba = 0.1
     lba_sens = lba
     reg =  lba * torch.norm(delta_s[idx_train].view(-1, 1)  * probs[idx_train], p="fro").sum()
     reg_sens_pred = lba_sens * torch.mean(sens[idx_train] * probs[idx_train, 1])
